@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id              String    @id @default(cuid())
+  title           String
+  slug            String    @unique
+  content         String
+  excerpt         String?
+  status          String    @default("draft") // draft, published
+  published       Boolean   @default(false)   // Keep for compatibility during transition if needed
+  
+  // Relations
+  categoryId      String?
+  category        Category? @relation(fields: [categoryId], references: [id])
+  tags            Tag[]     @relation("PostToTag")
+  authorId        String?
+  author          User?     @relation("AuthorPosts", fields: [authorId], references: [id])
+  comments        Comment[]
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  
+  // Analytics
+  views           Int       @default(0)
+  reads           Int       @default(0)
+  readRate        Float     @default(0)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  publishedAt     DateTime?
+
+  @@map("Post")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  posts       Post[]
+
+  @@map("Category")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  posts     Post[]   @relation("PostToTag")
+
+  @@map("Tag")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  name      String
+  email     String    @unique
+  role      String    @default("editor")
+  posts     Post[]    @relation("AuthorPosts")
+  comments  Comment[]
+  createdAt DateTime  @default(now())
+
+  @@map("User")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("Comment")
+}

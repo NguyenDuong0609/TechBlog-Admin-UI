@@ -1,0 +1,43 @@
+# Stage 1: Dependencies
+FROM node:20-alpine AS deps
+RUN apk add --no-cache libc6-compat openssl
+WORKDIR /app
+
+# Install dependencies
+COPY package.json package-lock.json* ./
+# Use --ignore-scripts and --legacy-peer-deps for robustness
+RUN npm install --ignore-scripts --legacy-peer-deps
+
+# Stage 2: Runner (Dev Mode)
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+# Install runtime dependencies
+RUN apk add --no-cache openssl sqlite
+# Install specific prisma version globally to ensure entrypoint works
+RUN npm install -g prisma@5.22.0
+
+ENV NODE_ENV development
+ENV DATABASE_URL="file:/app/data/dev.db"
+
+# Create data directory
+RUN mkdir -p /app/data
+RUN chown -R node:node /app/data
+
+# Copy dependencies
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Ensure entrypoint is executable
+RUN chmod +x ./docker-entrypoint.sh
+
+EXPOSE 3000
+
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+
+ENTRYPOINT ["./docker-entrypoint.sh"]
+CMD ["npm", "run", "dev"]

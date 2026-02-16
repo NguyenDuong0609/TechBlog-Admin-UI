@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: admin-dashboard-dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      - DATABASE_URL=file:/app/data/dev.db
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - NEXT_TELEMETRY_DISABLED=1
+    volumes:
+      - ./data:/app/data
+      # Mount source code for hot reloading (optional, can be removed if strictly immutable)
+      # - ./src:/app/src
+      # - ./public:/app/public
+    ports:
+      - "3000:3000"
+    restart: always
