@@ -65,8 +65,8 @@ RUN npm install -g prisma@5.22.0
 # Ensure entire app directory is owned by nextjs after global install
 RUN chown -R nextjs:nodejs /app
 
-# Ensure entrypoint is executable
-RUN chmod +x ./docker-entrypoint.sh
+# Ensure entrypoint is executable and has Linux line endings
+RUN sed -i 's/\r$//' ./docker-entrypoint.sh && chmod +x ./docker-entrypoint.sh
 
 USER nextjs
 
